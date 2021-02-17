@@ -55,6 +55,9 @@ void AFountain::BeginPlay()
 {
 	Super::BeginPlay();
 
+	//예제 확인을 위해 Waring으로 사용
+	ABLOG_S(Warning)
+	ABLOG(Warning, TEXT("Actor Name : %s, ID : %d, Location X : %.3f"), *GetName(), ID, GetActorLocation().X);
 }
 
 // Called every frame

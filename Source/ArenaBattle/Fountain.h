@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "EngineMinimal.h"
+#include "ArenaBattle.h"
 #include "GameFramework/Actor.h"
 #include "Fountain.generated.h"
 
