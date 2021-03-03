@@ -44,6 +44,9 @@ AABCharacter::AABCharacter()
 	IsAttacking = false;
 	MaxCombo = 4;
 	AttackEndComboState();
+
+	//콜리전 채널 설정
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("ABCharacter"));
 }
 
 // Called when the game starts or when spawned
