@@ -4,6 +4,7 @@
 #include "ABCharacter.h"
 #include "ABAnimInstance.h"
 #include "DrawDebugHelpers.h"
+#include "ABWeapon.h"
 
 // Sets default values
 AABCharacter::AABCharacter()
@@ -52,18 +53,7 @@ AABCharacter::AABCharacter()
 	AttackRange = 200.0f;
 	AttackRadius = 50.0f;
 
-	FName WeaponSocket(TEXT("hand_rSocket"));
-
-	if (GetMesh()->DoesSocketExist(WeaponSocket))
-	{
-		Weapon = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WEAPON"));
-		static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_WEAPON(TEXT("/Game/InfinityBladeWeapons/Weapons/Blade/Silly_Weapons/Blade_ChickenBlade/SK_Blade_ChickenBlade.SK_Blade_ChickenBlade"));
-		if (SK_WEAPON.Succeeded())
-		{
-			Weapon->SetSkeletalMesh(SK_WEAPON.Object);
-		}
-		Weapon->SetupAttachment(GetMesh(), WeaponSocket);
-	}
+	
 
 }
 
@@ -71,6 +61,34 @@ AABCharacter::AABCharacter()
 void AABCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	/*FName WeaponSocket(TEXT("hand_rSocket"));
+
+	auto CurWeapon = GetWorld()->SpawnActor<AABWeapon>(FVector::ZeroVector, FRotator::ZeroRotator);
+	if (CurWeapon != nullptr)
+	{
+		CurWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
+	}*/
+	
+	
+}
+
+bool AABCharacter::CanSetWeapon()
+{
+	return (CurrentWeapon == nullptr);
+}
+
+void AABCharacter::SetWeapon(AABWeapon* NewWeapon)
+{
+	ABCHECK(NewWeapon != nullptr && CurrentWeapon == nullptr);
+	FName WeaponSocket(TEXT("hand_rSocket"));
+	if (NewWeapon != nullptr)
+	{
+		NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
+		NewWeapon->SetOwner(this);
+		CurrentWeapon = NewWeapon;
+	}
+	
 
 }
 
