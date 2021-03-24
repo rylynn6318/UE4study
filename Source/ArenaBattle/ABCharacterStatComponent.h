@@ -6,6 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "ABCharacterStatComponent.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnHPIsZeroDelegate);
+DECLARE_MULTICAST_DELEGATE(FOnHPChangedDelegate);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ARENABATTLE_API UABCharacterStatComponent : public UActorComponent
@@ -24,7 +26,14 @@ protected:
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	void setNewLevel(int32 NewLevel);
+	void SetNewLevel(int32 NewLevel);
+	void SetDamage(float NewDamage);
+	void SetHP(float NewHP);
+	float GetAttack();
+	float getHPRatio();
+
+	FOnHPIsZeroDelegate OnHPIsZero;
+	FOnHPChangedDelegate OnHpChanged;
 
 private:
 	struct FABCharacterData* CurrentStatData = nullptr;

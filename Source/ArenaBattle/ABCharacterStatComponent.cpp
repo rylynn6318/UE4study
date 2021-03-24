@@ -27,7 +27,7 @@ void UABCharacterStatComponent::BeginPlay()
 void UABCharacterStatComponent::InitializeComponent()
 {
 	Super::InitializeComponent();
-	setNewLevel(Level);
+	SetNewLevel(Level);
 }
 
 
@@ -39,19 +39,55 @@ void UABCharacterStatComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	// ...
 }
 
-void UABCharacterStatComponent::setNewLevel(int32 NewLevel)
+void UABCharacterStatComponent::SetNewLevel(int32 NewLevel)
 {
 	auto ABGameInstance = Cast<UABGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
-	
-	ABCHECK(ABGameInstance != nullptr);
+
+	ABCHECK(nullptr != ABGameInstance);
 	CurrentStatData = ABGameInstance->GetABCharacterData(NewLevel);
-	if (CurrentStatData != nullptr)
+	if (nullptr != CurrentStatData)
 	{
 		Level = NewLevel;
+		SetHP(CurrentStatData->MaxHP);
 		CurrentHP = CurrentStatData->MaxHP;
 	}
 	else
 	{
 		ABLOG(Error, TEXT("Level (%d) data doesn't exist"), NewLevel);
 	}
+}
+
+void UABCharacterStatComponent::SetDamage(float NewDamage)
+{
+	ABCHECK(nullptr != CurrentStatData);
+	SetHP(FMath::Clamp<float>(CurrentHP - NewDamage, 0.0f, CurrentStatData->MaxHP));
+	CurrentHP = FMath::Clamp<float>(CurrentHP - NewDamage, 0.0f, CurrentStatData->MaxHP);
+	if (CurrentHP <= 0.0f)
+	{
+		OnHPIsZero.Broadcast();
+	}
+}
+
+void UABCharacterStatComponent::SetHP(float NewHP)
+{
+	CurrentHP = NewHP;
+	OnHpChanged.Broadcast();
+	if (CurrentHP < KINDA_SMALL_NUMBER)
+	{
+		CurrentHP = 0.0f;
+		OnHPIsZero.Broadcast();
+	}
+}
+
+float UABCharacterStatComponent::GetAttack()
+{
+	ABCHECK(nullptr != CurrentStatData, 0.0f);
+	return CurrentStatData->Attack;
+}
+
+float UABCharacterStatComponent::getHPRatio()
+{
+	ABCHECK(nullptr != CurrentStatData, 0.0f);
+
+	return (CurrentStatData->MaxHP < KINDA_SMALL_NUMBER) ? 0.0f : (CurrentHP / CurrentStatData->MaxHP);
 }

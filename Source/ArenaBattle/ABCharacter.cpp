@@ -1,11 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "ABCharacter.h"
 #include "ABAnimInstance.h"
-#include "DrawDebugHelpers.h"
 #include "ABWeapon.h"
 #include "ABCharacterStatComponent.h"
+#include "DrawDebugHelpers.h"
+#include "Components/WidgetComponent.h"
+#include "ABCharacterWidget.h"
 
 // Sets default values
 AABCharacter::AABCharacter()
@@ -15,9 +16,12 @@ AABCharacter::AABCharacter()
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SPRINGARM"));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("CAMERA"));
+	CharacterStat = CreateDefaultSubobject<UABCharacterStatComponent>(TEXT("CHARACTERSTAT"));
+	HPBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPBARWIDGET"));
+
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
-	CharacterStat = CreateDefaultSubobject<UABCharacterStatComponent>(TEXT("CHARACTERSTAT"));
+	HPBarWidget->SetupAttachment(GetMesh());
 
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -88.0f), FRotator(0.0f, -90.0f, 0.0f));
 	SpringArm->TargetArmLength = 400.0f;
@@ -44,18 +48,23 @@ AABCharacter::AABCharacter()
 	ArmLengthSpeed = 3.0f;
 	ArmRotationSpeed = 10.0f;
 	GetCharacterMovement()->JumpZVelocity = 800.0f;
+
 	IsAttacking = false;
 	MaxCombo = 4;
 	AttackEndComboState();
 
-	//콜리전 채널 설정
 	GetCapsuleComponent()->SetCollisionProfileName(TEXT("ABCharacter"));
-
 	AttackRange = 200.0f;
 	AttackRadius = 50.0f;
 
-	
-
+	HPBarWidget->SetRelativeLocation(FVector(0.0f, 0.0f, 180.0f));
+	HPBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	static ConstructorHelpers::FClassFinder<UUserWidget> UI_HUD(TEXT("/Game/Book/UI/UI_HPBar.UI_HPBar_C"));
+	if (UI_HUD.Succeeded())
+	{
+		HPBarWidget->SetWidgetClass(UI_HUD.Class);
+		HPBarWidget->SetDrawSize(FVector2D(150.0f, 50.0f));
+	}
 }
 
 // Called when the game starts or when spawned
@@ -63,34 +72,11 @@ void AABCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	/*FName WeaponSocket(TEXT("hand_rSocket"));
-
-	auto CurWeapon = GetWorld()->SpawnActor<AABWeapon>(FVector::ZeroVector, FRotator::ZeroRotator);
-	if (CurWeapon != nullptr)
+	auto CharacterWidget = Cast<UABCharacterWidget>(HPBarWidget->GetUserWidgetObject());
+	if (nullptr != CharacterWidget)
 	{
-		CurWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
-	}*/
-	
-	
-}
-
-bool AABCharacter::CanSetWeapon()
-{
-	return (CurrentWeapon == nullptr);
-}
-
-void AABCharacter::SetWeapon(AABWeapon* NewWeapon)
-{
-	ABCHECK(NewWeapon != nullptr && CurrentWeapon == nullptr);
-	FName WeaponSocket(TEXT("hand_rSocket"));
-	if (NewWeapon != nullptr)
-	{
-		NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
-		NewWeapon->SetOwner(this);
-		CurrentWeapon = NewWeapon;
+		CharacterWidget->BindCharacterStat(CharacterStat);
 	}
-	
-
 }
 
 void AABCharacter::SetControlMode(EControlMode NewControlMode)
@@ -161,7 +147,7 @@ void AABCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 	ABAnim = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
-	ABCHECK(ABAnim != nullptr);
+	ABCHECK(nullptr != ABAnim);
 
 	ABAnim->OnMontageEnded.AddDynamic(this, &AABCharacter::OnAttackMontageEnded);
 
@@ -176,20 +162,25 @@ void AABCharacter::PostInitializeComponents()
 			ABAnim->JumpToAttackMontageSection(CurrentCombo);
 		}
 		});
+
 	ABAnim->OnAttackHitCheck.AddUObject(this, &AABCharacter::AttackCheck);
+
+	if (CharacterStat != nullptr)
+	{
+		CharacterStat->OnHPIsZero.AddLambda([this]() -> void {
+			ABLOG(Warning, TEXT("OnHPIsZero"));
+			ABAnim->SetDeadAnim();
+			SetActorEnableCollision(false);
+			});
+	}
 }
 
 float AABCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	ABLOG(Warning, TEXT("Actor : %s took Damage : &f"), *GetName(), FinalDamage);
+	ABLOG(Warning, TEXT("Actor : %s took Damage : %f"), *GetName(), FinalDamage);
 
-	if (FinalDamage > 0.0f)
-	{
-		ABAnim->SetDeadAnim();
-		SetActorEnableCollision(false);
-	}
-
+	CharacterStat->SetDamage(FinalDamage);
 	return FinalDamage;
 }
 
@@ -199,13 +190,30 @@ void AABCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	PlayerInputComponent->BindAction(TEXT("ViewChange"), EInputEvent::IE_Pressed, this, &AABCharacter::ViewChange);
-	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &AABCharacter::Jump);
+	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction(TEXT("Attack"), EInputEvent::IE_Pressed, this, &AABCharacter::Attack);
 
 	PlayerInputComponent->BindAxis(TEXT("UpDown"), this, &AABCharacter::UpDown);
 	PlayerInputComponent->BindAxis(TEXT("LeftRight"), this, &AABCharacter::LeftRight);
-	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &AABCharacter::LookUp);
 	PlayerInputComponent->BindAxis(TEXT("Turn"), this, &AABCharacter::Turn);
+	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &AABCharacter::LookUp);
+}
+
+bool AABCharacter::CanSetWeapon()
+{
+	return (nullptr == CurrentWeapon);
+}
+
+void AABCharacter::SetWeapon(AABWeapon* NewWeapon)
+{
+	ABCHECK(nullptr != NewWeapon && nullptr == CurrentWeapon);
+	FName WeaponSocket(TEXT("hand_rSocket"));
+	if (nullptr != NewWeapon)
+	{
+		NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
+		NewWeapon->SetOwner(this);
+		CurrentWeapon = NewWeapon;
+	}
 }
 
 void AABCharacter::UpDown(float NewAxisValue)
@@ -223,7 +231,6 @@ void AABCharacter::UpDown(float NewAxisValue)
 
 void AABCharacter::LeftRight(float NewAxisValue)
 {
-
 	switch (CurrentControlMode)
 	{
 	case EControlMode::GTA:
@@ -235,22 +242,22 @@ void AABCharacter::LeftRight(float NewAxisValue)
 	}
 }
 
-void AABCharacter::LookUp(float NewAxisValue)
-{
-	switch (CurrentControlMode)
-	{
-	case EControlMode::GTA:
-		AddControllerPitchInput(NewAxisValue);
-		break;
-	}
-}
-
 void AABCharacter::Turn(float NewAxisValue)
 {
 	switch (CurrentControlMode)
 	{
 	case EControlMode::GTA:
 		AddControllerYawInput(NewAxisValue);
+		break;
+	}
+}
+
+void AABCharacter::LookUp(float NewAxisValue)
+{
+	switch (CurrentControlMode)
+	{
+	case EControlMode::GTA:
+		AddControllerPitchInput(NewAxisValue);
 		break;
 	}
 }
@@ -320,14 +327,14 @@ void AABCharacter::AttackCheck()
 	bool bResult = GetWorld()->SweepSingleByChannel(
 		HitResult,
 		GetActorLocation(),
-		GetActorLocation() + GetActorForwardVector() * 200.0f,
+		GetActorLocation() + GetActorForwardVector() * AttackRange,
 		FQuat::Identity,
-		ECollisionChannel::ECC_GameTraceChannel12,
-		FCollisionShape::MakeSphere(50.0f),
-		Params
-	);
+		ECollisionChannel::ECC_GameTraceChannel2,
+		FCollisionShape::MakeSphere(AttackRadius),
+		Params);
 
 #if ENABLE_DRAW_DEBUG
+
 	FVector TraceVec = GetActorForwardVector() * AttackRange;
 	FVector Center = GetActorLocation() + TraceVec * 0.5f;
 	float HalfHeight = AttackRange * 0.5f + AttackRadius;
@@ -342,16 +349,18 @@ void AABCharacter::AttackCheck()
 		CapsuleRot,
 		DrawColor,
 		false,
-		DebugLifeTime
-		);
-#endif // ENABLE_DRAW_DEBUG
+		DebugLifeTime);
+
+#endif
+
 	if (bResult)
 	{
 		if (HitResult.Actor.IsValid())
 		{
 			ABLOG(Warning, TEXT("Hit Actor Name : %s"), *HitResult.Actor->GetName());
+
 			FDamageEvent DamageEvent;
-			HitResult.Actor->TakeDamage(50.0f, DamageEvent, GetController(), this);
+			HitResult.Actor->TakeDamage(CharacterStat->GetAttack(), DamageEvent, GetController(), this);
 		}
 	}
 }

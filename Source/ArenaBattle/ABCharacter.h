@@ -11,7 +11,7 @@ class ARENABATTLE_API AABCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-public:
+	public:
 	// Sets default values for this character's properties
 	AABCharacter();
 
@@ -25,7 +25,7 @@ protected:
 		DIABLO
 	};
 
-	void SetControlMode(EControlMode ControlMode);
+	void SetControlMode(EControlMode NewControlMode);
 	EControlMode CurrentControlMode = EControlMode::GTA;
 	FVector DirectionToMove = FVector::ZeroVector;
 
@@ -34,8 +34,7 @@ protected:
 	float ArmLengthSpeed = 0.0f;
 	float ArmRotationSpeed = 0.0f;
 
-
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	virtual void PostInitializeComponents() override;
@@ -59,6 +58,18 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	UCameraComponent* Camera;
 
+	UPROPERTY(VisibleAnywhere, Category = UI)
+	class UWidgetComponent* HPBarWidget;
+
+private:
+	void UpDown(float NewAxisValue);
+	void LeftRight(float NewAxisValue);
+	void Turn(float NewAxisValue);
+	void LookUp(float NewAxisValue);
+
+	void ViewChange();
+	void Attack();
+
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
@@ -67,15 +78,7 @@ public:
 	void AttackCheck();
 
 private:
-	void UpDown(float NewAxisValue);
-	void LeftRight(float NewAxisValue);
-	void LookUp(float NewAxisValue);
-	void Turn(float NewAxisValue);
-
-	void ViewChange();
-	void Attack();
-
-	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly, Category = Attack, meta = (AllowPrivateAccess = true))
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 	bool IsAttacking;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
@@ -93,9 +96,9 @@ private:
 	UPROPERTY()
 	class UABAnimInstance* ABAnim;
 
-	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly, Category = Attack, meta = (AllowPrivateAccess = true))
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 	float AttackRange;
-	
-	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly, Category = Attack, meta = (AllowPrivateAccess = true))
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 	float AttackRadius;
 };
