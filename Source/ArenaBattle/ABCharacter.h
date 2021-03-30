@@ -38,6 +38,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	virtual void PostInitializeComponents() override;
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -62,6 +63,7 @@ private:
 
 	void AttackStartComboState();
 	void AttackEndComboState();
+	void AttackCheck();
 
 private:
 	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly, Category = "Attck", meta = (AllowPrivateAccess = true))
@@ -81,4 +83,10 @@ private:
 	
 	UPROPERTY()
 	class UABAnimInstance* ABAnim;
+
+	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly, Category = "Attack", meta = (AllowPrivateAccess = true))
+	float AttackRange;
+	
+	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly, Category = "Attack", meta = (AllowPrivateAccess = true))
+	float AttackRadius;
 };
