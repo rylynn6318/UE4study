@@ -3,6 +3,8 @@
 
 #include "ABCharacter.h"
 #include "ABAnimInstance.h"
+#include "ABWeapon.h"
+#include "ABCharacterStatComponent.h"
 #include "DrawDebugHelpers.h"
 
 // Sets default values
@@ -12,6 +14,7 @@ AABCharacter::AABCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SPRINGARM"));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("CAMERA"));
+	CharacterStat = CreateDefaultSubobject<UABCharacterStatComponent>(TEXT("CHARACTERSTAT"));
 
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
@@ -56,7 +59,6 @@ AABCharacter::AABCharacter()
 void AABCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 void AABCharacter::PostInitializeComponents()
@@ -174,6 +176,23 @@ void AABCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAxis(TEXT("LeftRight"), this, &AABCharacter::LeftRight);
 	PlayerInputComponent->BindAxis(TEXT("Turn"), this, &AABCharacter::Turn);
 	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &AABCharacter::LookUp);
+}
+
+bool AABCharacter::CanSetWeapon()
+{
+	return (CurrentWeapon == nullptr);
+}
+
+void AABCharacter::SetWeapon(AABWeapon* NewWeapon)
+{
+	ABCHECK(NewWeapon != nullptr && CurrentWeapon == nullptr);
+	FName WeaponSocket(TEXT("hand_rSocket"));
+	if (NewWeapon != nullptr)
+	{
+		NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
+		NewWeapon->SetOwner(this);
+		CurrentWeapon = NewWeapon;
+	}
 }
 
 void AABCharacter::UpDown(float NewAxisValue)

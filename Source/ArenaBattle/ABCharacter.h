@@ -42,7 +42,12 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	bool CanSetWeapon();
+	void SetWeapon(class AABWeapon* NewWeapon);
 
+	UPROPERTY(VisibleAnywhere, Category = "Stat")
+	class UABCharacterStatComponent* CharacterStat;
+	
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	USpringArmComponent* SpringArm;
 
@@ -89,4 +94,7 @@ private:
 	
 	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly, Category = "Attack", meta = (AllowPrivateAccess = true))
 	float AttackRadius;
+
+	UPROPERTY(VisibleAnywhere, Category = "Weapon")
+	class AABWeapon* CurrentWeapon;
 };
