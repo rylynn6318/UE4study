@@ -81,6 +81,8 @@ private:
 	void AttackEndComboState();
 	void AttackCheck();
 
+	void OnAssetLoadCompleted();
+
 private:
 	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly, Category = "Attck", meta = (AllowPrivateAccess = true))
 	bool IsAttacking;
@@ -108,4 +110,7 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
 	class AABWeapon* CurrentWeapon;
+
+	FSoftObjectPath CharacterAssetToLoad = FSoftObjectPath(nullptr);
+	TSharedPtr<struct FStreamableHandle> AssetStreamingHandle;
 };
