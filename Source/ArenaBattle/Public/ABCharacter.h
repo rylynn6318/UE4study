@@ -16,6 +16,8 @@ class ARENABATTLE_API AABCharacter : public ACharacter
 public:
 	// Sets default values for this character's properties
 	AABCharacter();
+	void SetCharacterState(ECharacterState NewState);
+	ECharacterState GetCharacterState() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -113,4 +115,23 @@ private:
 
 	FSoftObjectPath CharacterAssetToLoad = FSoftObjectPath(nullptr);
 	TSharedPtr<struct FStreamableHandle> AssetStreamingHandle;
+
+	int32 AssetIndex = 0;
+
+	UPROPERTY(BlueprintReadOnly, Transient, VisibleInstanceOnly, Category = "State", meta = (AllowPrivateAccess = true))
+	ECharacterState CurrentState;
+
+	UPROPERTY(BlueprintReadOnly, Transient, VisibleInstanceOnly, Category = "State", meta = (AllowPrivateAccess = true))
+	bool bIsPlayer;
+
+	UPROPERTY()
+	class AABAIController* ABAIController;
+	
+	UPROPERTY()
+	class AABPlayerController* ABPlayerController;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "State", meta = (AllowPrivateAccess = true))
+	float DeadTimer;
+
+	FTimerHandle DeadTimerHandle = {};
 };
