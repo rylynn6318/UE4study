@@ -14,6 +14,7 @@
 #include "ABPlayerController.h"
 #include "ABPlayerState.h"
 #include "ABHUDWidget.h"
+#include "ABGameMode.h"
 
 // Sets default values
 AABCharacter::AABCharacter()
@@ -105,6 +106,15 @@ void AABCharacter::SetCharacterState(ECharacterState NewState)
 			ABCHECK(ABPlayerState != nullptr);
 			CharacterStat->SetNewLevel(ABPlayerState->GetCharacterLevel());
 		}
+		else
+		{
+			auto ABGameMode = Cast<AABGameMode>(GetWorld()->GetAuthGameMode());
+			ABCHECK(ABGameMode != nullptr);
+			int32 TargetLevel = FMath::CeilToInt(((float)ABGameMode->GetScore() * 0.8f));
+			int32 FInalLevel = FMath::Clamp<int32>(TargetLevel, 1, 20);
+			ABLOG(Warning, TEXT("New NPC Level : %d"), FInalLevel);
+			CharacterStat->SetNewLevel(FInalLevel);
+		}
 
 		SetActorHiddenInGame(true);
 		HPBarWidget->SetHiddenInGame(true);
@@ -146,7 +156,8 @@ void AABCharacter::SetCharacterState(ECharacterState NewState)
 
 		if (bIsPlayer)
 		{
-			DisableInput(ABPlayerController);
+			//DisableInput(ABPlayerController);
+			ABPlayerController->ShowResultUI();
 		}
 		else
 		{
@@ -184,6 +195,30 @@ float AABCharacter::GetFinalAttackRange() const
 	return (CurrentWeapon != nullptr) ? CurrentWeapon->GetAttackRange() : AttackRange;
 }
 
+//float AABCharacter::GetFinalAttackDamage() const
+//{
+//	float AttackDamage = 0.0f, AttackModifier = 0.0f;
+//
+//	if (CurrentWeapon != nullptr)
+//	{
+//		AttackDamage = CharacterStat->GetAttack() + CurrentWeapon->GetAttackDamage();
+//		AttackModifier = CurrentWeapon->GetAttackModifier();
+//	}
+//	else
+//	{
+//		AttackDamage = CharacterStat->GetAttack();
+//		AttackModifier = 1.0f;
+//	}
+//	return AttackDamage * AttackModifier;
+//}
+
+float AABCharacter::GetFinalAttackDamage() const
+{
+	float AttackDamage = (CurrentWeapon != nullptr) ? (CharacterStat->GetAttack() + CurrentWeapon->GetAttackDamage()) : CharacterStat->GetAttack();
+	float AttackModifier = (CurrentWeapon != nullptr) ? CurrentWeapon->GetAttackModifier() : 1.0f;
+	return AttackDamage * AttackModifier;
+}
+
 // Called when the game starts or when spawned
 void AABCharacter::BeginPlay()
 {
@@ -214,7 +249,10 @@ void AABCharacter::BeginPlay()
 
 	if (bIsPlayer)
 	{
-		AssetIndex = 4;
+		//AssetIndex = 4;
+		auto ABPlayerState = Cast<AABPlayerState>(GetPlayerState());
+		ABCHECK(ABPlayerState != nullptr);
+		AssetIndex = ABPlayerState->GetCharacterIndex();
 	}
 	else
 	{

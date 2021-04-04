@@ -16,6 +16,8 @@ public:
 	AABWeapon();
 
 	float GetAttackRange() const;
+	float GetAttackDamage() const;
+	float GetAttackModifier() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -32,4 +34,22 @@ public:
 protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attack")
 	float AttackRange;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attack")
+	float AttackDamageMin;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attack")
+	float AttackDamageMax;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attack")
+	float AttackModifierMin;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attack")
+	float AttackModifierMax;
+
+	UPROPERTY(BlueprintReadOnly, Transient, VisibleInstanceOnly, Category = "Attack")
+	float AttackDamage;
+
+	UPROPERTY(BlueprintReadOnly, Transient, VisibleInstanceOnly, Category = "Attack")
+	float AttackModifier;
 };
