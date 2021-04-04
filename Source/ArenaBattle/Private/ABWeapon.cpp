@@ -20,6 +20,12 @@ AABWeapon::AABWeapon()
 	}
 
 	Weapon->SetCollisionProfileName(TEXT("NoCollision"));
+	AttackRange = 150.0f;
+}
+
+float AABWeapon::GetAttackRange() const
+{
+	return AttackRange;
 }
 
 // Called when the game starts or when spawned
@@ -35,4 +41,5 @@ void AABWeapon::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
+
 
