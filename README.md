@@ -13,3 +13,8 @@ BuildConfiguration.xml 파일 수정필요
           <GitPath></GitPath> 
  </SourceFileWorkingSet>
 ```
+
+정오표
+> https://github.com/smarthug/UE4-CPP-Book
+
+> http://www.acornpub.co.kr/book/unreal-c#errata
